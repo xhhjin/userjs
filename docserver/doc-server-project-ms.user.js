@@ -1,13 +1,13 @@
 ﻿// ==UserScript==
 // @name        ArcSoft Project Management
 // @version     5
-// @author      maxint <NOT_SPAM_lnychina@gmail.com>
+// @author      maxint <NOT_SPAM_lnychina@gmail.com>, xhhjin
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft project management system in http://doc-server
 // @include     http://doc-server/*
 // @include     https://doc-server/*
-// @updateURL   https://raw.githubusercontent.com/maxint/userjs/master/docserver/doc-server-project-ms.user.js
-// @downloadURL https://raw.githubusercontent.com/maxint/userjs/master/docserver/doc-server-project-ms.user.js
+// @updateURL   https://github.com/xhhjin/userjs/raw/master/docserver/doc-server-project-ms.user.js
+// @downloadURL https://github.com/xhhjin/userjs/raw/master/docserver/doc-server-project-ms.user.js
 // @grant       none
 // @Note
 // v5
@@ -347,11 +347,11 @@
         // update version
         $('#txtDeliveryPackage,#txtDeliveryPackages').change(function () {
             var val = $(this).val();
-            var vers = /(\d+)\.(\d+)\.\d+\.(\d+)/g.exec(val);
+            var vers = /(\d+)\.(\d+)\.(\d+)\.(\d+)/g.exec(val);
             if (vers == null)
                 vers = /(\d+)\.(\d+)\.(\d+)/g.exec(val);
             if (vers) {
-                vstr = 'v' + [vers[1], vers[2], vers[3]].join('.')
+                vstr = [vers[1], vers[2], vers[3], vers[4]].join('.')
                 $("input[name='txtVersion']").val(vstr);
             }
         }).css({
