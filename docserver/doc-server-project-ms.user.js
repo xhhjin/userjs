@@ -10,6 +10,9 @@
 // @downloadURL https://github.com/xhhjin/userjs/raw/master/docserver/doc-server-project-ms.user.js
 // @grant       none
 // @Note
+// v7
+//  -Fix bug for Chrome.
+//
 // v6
 //  -Fix bug of Object.keys() in Chrome.
 //
