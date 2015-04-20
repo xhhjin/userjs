@@ -1,6 +1,6 @@
 ﻿// ==UserScript==
 // @name        ArcSoft Project Management
-// @version     6
+// @version     7
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>, xhhjin
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft project management system in http://doc-server
@@ -423,16 +423,18 @@
                 table.find('tbody').each(function () {
                     $(this).empty();
                     // insert items
-                    var keys = Object.keys(data).filter(checkID);
+                    var keys = Object.keys(data);
                     keys.sort();
                     for (var i in keys) {
                         var id = keys[i];
                         var val = data[id];
-                        $('<tr id=proj_' + id + '>' +
-                          '<td><input type="checkbox"></td>' +
-                          '<td>' + id + '</td>' +
-                          '<td class="projIdName">' + val['name'] + '</td>' +
-                          '<td><input id="delID" type="button" value="Del"/></td></tr>').appendTo($(this));
+                        if (checkID(id)) {
+                            $('<tr id=proj_' + id + '>' +
+                            '<td><input type="checkbox"></td>' +
+                            '<td>' + id + '</td>' +
+                            '<td class="projIdName">' + val['name'] + '</td>' +
+                            '<td><input id="delID" type="button" value="Del"/></td></tr>').appendTo($(this));
+                        }
                     }
                     $("input[name='txtReleaseReleatedProject']").keyup();
                 });
