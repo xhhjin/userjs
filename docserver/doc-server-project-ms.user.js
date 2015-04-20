@@ -1,6 +1,6 @@
 ﻿// ==UserScript==
 // @name        ArcSoft Project Management
-// @version     5
+// @version     6
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>, xhhjin
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft project management system in http://doc-server
@@ -10,6 +10,9 @@
 // @downloadURL https://github.com/xhhjin/userjs/raw/master/docserver/doc-server-project-ms.user.js
 // @grant       none
 // @Note
+// v6
+//  -Fix bug of Object.keys() in Chrome.
+//
 // v5
 //  - Fix bug of no response in Firefox.
 //  - Sort project Ids.
@@ -146,10 +149,10 @@
             var link = '<a href="' + rlsUrl + '">Release</a>'
             $(this).find('td:nth-child(2)').after('<td>' + link + '</td>');
         });
-    };
+    }
 
     // fill input values
-    var fillValues = function (dict, istore) {
+    function fillValues(dict, istore) {
         for (var key in dict) {
             var elem = dict[key];
             if (!elem.val())
@@ -157,10 +160,15 @@
         }
     }
     // save input values
-    var storeValues = function (dict, istore) {
+    function storeValues(dict, istore) {
         for (var key in dict) {
             istore.set(key, dict[key].val());
         }
+    }
+
+    // check id
+    function checkID(id) {
+        return /^\d{4,5}$/.test(id);
     }
 
     // operate w.r.t. sub path
@@ -233,7 +241,7 @@
                 return id in this.data;
             };
             this.add = function (id, name) {
-                assert(/^\d{4}$/.test(id));
+                assert(checkID(id));
                 if (!this.contains(id)) {
                     this.data[id] = {name: name};
                     cb(this.data);
@@ -266,7 +274,7 @@
                 return this;
             };
             this.check = function (id, callback) {
-                if (/^[0-9]{4}$/.test(id)) {
+                if (checkID(id)) {
                     var url = '../ProjectDelivery/delivery_releated_project_list.asp';
                     $.get(url, {projid: id}, function (data, status) {
                         name = $(data).find('td:nth-child(2)').text();
@@ -392,7 +400,7 @@
             $("input[name='txtReleaseReleatedProject']").keyup(function () {
                 var val = this.value.trim();
                 var selected = val.split(',');
-                if (val == '' || selected.every(function(id) { return /^\d{4}$/.test(id); })) {
+                if (val == '' || selected.every(checkID)) {
                     console.log('Selected: ' + selected);
                     $(':checkbox', table).attr('checked', false);
                     for (var i in selected) {
@@ -415,7 +423,7 @@
                 table.find('tbody').each(function () {
                     $(this).empty();
                     // insert items
-                    var keys = Object.keys(data);
+                    var keys = Object.keys(data).filter(checkID);
                     keys.sort();
                     for (var i in keys) {
                         var id = keys[i];
