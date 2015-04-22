@@ -1,6 +1,6 @@
 ﻿// ==UserScript==
 // @name        ArcSoft Project Management
-// @version     7
+// @version     8
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>, xhhjin
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft project management system in http://doc-server
@@ -10,6 +10,9 @@
 // @downloadURL https://github.com/xhhjin/userjs/raw/master/docserver/doc-server-project-ms.user.js
 // @grant       none
 // @Note
+// v8
+//  -Fix bugs for Chrome in release package.
+//
 // v7
 //  -Fix bug for Chrome.
 //
@@ -333,7 +336,9 @@
                 var pkgs = packagesTextArea.val().split('\n');
                 for (var i in pkgs) {
                     var pkg = pkgs[i];
-                    $('input#txtReleasePath,input#txtDeliveryPackage').val(pkg);
+                    if (typeof(pkg)=="string") {
+                        $('input#txtReleasePath,input#txtDeliveryPackage').val(pkg);
+                    }
                     if (!$('#form1').valid()) {
                         alert('提交包列表格式不对');
                         return;
@@ -344,12 +349,15 @@
                 for (var i in pkgs) {
                     var pkg = pkgs[i];
                     console.log('submitting ' + pkg + ' ...');
-                    $('input#txtReleasePath,input#txtDeliveryPackage').val(pkg);
-                    var qstr = $('#form1').formSerialize();
-                    $.post('/projectManage/Ajax/AjaxSubmitProjectRelease.asp', qstr, function (data) {
-                        if (data != "success")
-                            alert(data);
-                    });
+                    if (typeof(pkg)=="string") {
+                        $('input#txtReleasePath,input#txtDeliveryPackage').val(pkg);
+                    
+                        var qstr = $('#form1').formSerialize();
+                        $.post('/projectManage/Ajax/AjaxSubmitProjectRelease.asp', qstr, function (data) {
+                            if (data != "success")
+                                alert(data);
+                        });
+                    }
                 }
                 alert("提交成功");
                 parent.document.location.reload();
