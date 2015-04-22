@@ -1,6 +1,6 @@
 ﻿// ==UserScript==
 // @name        ArcSoft Project Management
-// @version     8
+// @version     9
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>, xhhjin
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft project management system in http://doc-server
@@ -10,6 +10,9 @@
 // @downloadURL https://github.com/xhhjin/userjs/raw/master/docserver/doc-server-project-ms.user.js
 // @grant       none
 // @Note
+// v9
+//  - Fix bugs.
+//
 // v8
 //  -Fix bugs for Chrome in release package.
 //
@@ -17,7 +20,7 @@
 //  -Fix bug for Chrome.
 //
 // v6
-//  -Fix bug of Object.keys() in Chrome.
+//  - Fix bug of Object.keys() in Chrome.
 //
 // v5
 //  - Fix bug of no response in Firefox.
@@ -90,7 +93,7 @@
                 document.head.appendChild(cb);
             });
         } else {
-            var dollar = undefined;
+            var dollar;
             if (typeof($) != "undefined") dollar = $;
             script.addEventListener('load', function () {
                 jQuery.noConflict();
@@ -151,8 +154,8 @@
         trs.first().find('th:nth-child(2)').after('<th>Operations</th>');
         trs.nextAll().each(function () {
             var id = $(this).find('td:first a:first').text();
-            var rlsUrl = 'http://doc-server/projectManage/ProjectOther/ReleaseList.asp?proj_id=' + id
-            var link = '<a href="' + rlsUrl + '">Release</a>'
+            var rlsUrl = 'http://doc-server/projectManage/ProjectOther/ReleaseList.asp?proj_id=' + id;
+            var link = '<a href="' + rlsUrl + '">Release</a>';
             $(this).find('td:nth-child(2)').after('<td>' + link + '</td>');
         });
     }
@@ -160,15 +163,19 @@
     // fill input values
     function fillValues(dict, istore) {
         for (var key in dict) {
-            var elem = dict[key];
-            if (!elem.val())
-                elem.val(istore.get(key, ''));
+            if (dict.hasOwnProperty(key)) {
+                var elem = dict[key];
+                if (!elem.val())
+                    elem.val(istore.get(key, ''));
+            }
         }
     }
     // save input values
     function storeValues(dict, istore) {
         for (var key in dict) {
-            istore.set(key, dict[key].val());
+            if (dict.hasOwnProperty(key)) {
+                istore.set(key, dict[key].val());
+            }
         }
     }
 
@@ -276,15 +283,15 @@
             };
             this.change = function (callback) {
                 var oldcb = cb;
-                cb = function (data) { oldcb(data); callback(data); }
+                cb = function (data) { oldcb(data); callback(data); };
                 return this;
             };
             this.check = function (id, callback) {
                 if (checkID(id)) {
                     var url = '../ProjectDelivery/delivery_releated_project_list.asp';
                     $.get(url, {projid: id}, function (data, status) {
-                        name = $(data).find('td:nth-child(2)').text();
-                        if (status == 'success' && name != "" && callback) {
+                        var name = $(data).find('td:nth-child(2)').text();
+                        if (status == 'success' && name !== "" && callback) {
                             proj_status = $(data).find('td:nth-child(3)').text();
                             callback(id, name, proj_status);
                         } else {
@@ -367,7 +374,7 @@
         $('#txtDeliveryPackage,#txtDeliveryPackages').change(function () {
             var val = $(this).val();
             var vers = /(\d+)\.(\d+)\.(\d+)\.(\d+)/g.exec(val);
-            if (vers == null)
+            if (vers === null)
                 vers = /(\d+)\.(\d+)\.(\d+)/g.exec(val);
             if (vers) {
                 vstr = [vers[1], vers[2], vers[3], vers[4]].join('.')
@@ -384,16 +391,16 @@
         $(function () {
             var table = $('<table>' +
                           '<thead><tr style="width:10px">' +
-                              '<td><input id="selectAllIDs" type="checkbox"></td><td style="width:40px">ID</td><td>Name</td><td style="width:60px">Operation</td>' +
+                          '<td><input id="selectAllIDs" type="checkbox"></td><td style="width:40px">ID</td><td>Name</td><td style="width:60px">Operation</td>' +
                           '</tr></thead>' +
                           '<tbody></tbody>' +
                           '<tfoot>' +
-                              '<tr><td/>' +
-                              '<td><input id="inputID" type="text" maxlength="4" size="4"/></td>' +
-                              '<td id="inputIDtxt" class="projIdName">Clicking "Add" to add item</td>' +
-                              '<td><input id="addID" type="button" value="Add" disabled="true"/></td></tr>' +
-                              '<tr><td/><td/><td>Clear all saved data</td>' +
-                              '<td><input id="flushIDs" type="button" value="Flush"/></td></tr>' +
+                          '<tr><td/>' +
+                          '<td><input id="inputID" type="text" maxlength="4" size="4"/></td>' +
+                          '<td id="inputIDtxt" class="projIdName">Clicking "Add" to add item</td>' +
+                          '<td><input id="addID" type="button" value="Add" disabled="true"/></td></tr>' +
+                          '<tr><td/><td/><td>Clear all saved data</td>' +
+                          '<td><input id="flushIDs" type="button" value="Flush"/></td></tr>' +
                           '</tfoot>' +
                           '</table>').css({ width: '100%' });
             $('input#btnCheckReleatedProject').after('<div></div>').next().after(table);
@@ -402,16 +409,16 @@
                 var checked = table.find('tbody input:checked').length;
                 var total = table.find('tbody input:checkbox').length;
                 table.find('input#selectAllIDs').each(function () {
-                    this.indeterminate = checked != total && checked != 0;
+                    this.indeterminate = checked != total && checked !== 0;
                     if (!this.indeterminate)
-                        this.checked == checked == total;
+                        this.checked = (checked == total);
                 });
             };
             // detete id input box
             $("input[name='txtReleaseReleatedProject']").keyup(function () {
                 var val = this.value.trim();
                 var selected = val.split(',');
-                if (val == '' || selected.every(checkID)) {
+                if (val === '' || selected.every(checkID)) {
                     console.log('Selected: ' + selected);
                     $(':checkbox', table).attr('checked', false);
                     for (var i in selected) {
@@ -484,8 +491,8 @@
                 });
             }).find('input#selectAllIDs').click(function () {
                 table.find(':checkbox').attr('checked', this.checked);
-            })
-            var addButton = $('input#addID', table)
+            });
+            var addButton = $('input#addID', table);
             table.find('tfoot').delegate('input#inputID', 'keyup', function (e) {
                 if (e.which == 13 && !addButton.attr('disabled')) {
                     addButton.click();
@@ -493,7 +500,7 @@
                 }
                 idmgr.check(this.value, function (name) {
                     table.find('td#inputIDtxt').html(name || '<font color="#FF0000">[Invalid project id]</font>');
-                    addButton.attr('disabled', name == undefined)
+                    addButton.attr('disabled', name === undefined);
                 });
             }).delegate('input#addID', 'click', function () {
                 var id = table.find('input#inputID').val();
