@@ -1,6 +1,6 @@
 ﻿// ==UserScript==
 // @name        ArcSoft Project Management
-// @version     9
+// @version     10
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>, xhhjin
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft project management system in http://doc-server
@@ -10,6 +10,10 @@
 // @downloadURL https://github.com/xhhjin/userjs/raw/master/docserver/doc-server-project-ms.user.js
 // @grant       none
 // @Note
+// v10
+//  - Fix bug of using "for in" loop for Array.
+//  - Filter empty package path.
+//
 // v9
 //  - Fix bugs.
 //
@@ -93,7 +97,7 @@
                 document.head.appendChild(cb);
             });
         } else {
-            var dollar;
+            var dollar = undefined;
             if (typeof($) != "undefined") dollar = $;
             script.addEventListener('load', function () {
                 jQuery.noConflict();
@@ -338,33 +342,48 @@
             $('#btnSubmit').removeAttr('onclick').click(function () {
                 // check form
                 console.log('checking form ...');
-                if (!checkReleateProject())
-                    return;
-                var pkgs = packagesTextArea.val().split('\n');
-                for (var i in pkgs) {
-                    var pkg = pkgs[i];
-                    if (typeof(pkg)=="string") {
-                        $('input#txtReleasePath,input#txtDeliveryPackage').val(pkg);
+                if (!(function () {
+                    if ($("#txtReleaseType").val() == "1") {
+                        //先进行校验是否填写了相关项目,如果填写了,同时校验规则 是否正确.
+                        var selected = $("#txtReleaseReleatedProject").val();
+                        if (selected === "") {
+                            alert("项目号格式不能为空");
+                            $("#txtReleaseReleatedProject").focus();
+                            return false;
+                        } else {
+                            /* 检验是否符合输入规则.*/
+                            if (!selected.split(',').every(checkID)) {
+                                $("#txtReleaseReleatedProject").focus();
+                                alert("项目号格式不对");
+                                return false;
+                            }
+                            return true;
+                        }
                     }
+                })()) return;
+                var pkgs = packagesTextArea.val().split('\n').map(function (s) {
+                    return s.trim();
+                }).filter(function (s) { return s !== ''; });
+                for (var i = 0; i < pkgs.length; ++i) {
+                    var pkg = pkgs[i];
+                    $('input#txtReleasePath,input#txtDeliveryPackage').val(pkg);
                     if (!$('#form1').valid()) {
                         alert('提交包列表格式不对');
                         return;
                     }
                 }
-                // submit
+                // disable the form to avoid user interaction when subcomt
                 $(this).attr('disabled', true);
-                for (var i in pkgs) {
+                // submit
+                for (var i = 0; i < pkgs.length; ++i) {
                     var pkg = pkgs[i];
-                    console.log('submitting ' + pkg + ' ...');
-                    if (typeof(pkg)=="string") {
-                        $('input#txtReleasePath,input#txtDeliveryPackage').val(pkg);
-                    
-                        var qstr = $('#form1').formSerialize();
-                        $.post('/projectManage/Ajax/AjaxSubmitProjectRelease.asp', qstr, function (data) {
-                            if (data != "success")
-                                alert(data);
-                        });
-                    }
+                    console.log('submitting "' + pkg + '" ...');
+                    $('input#txtReleasePath,input#txtDeliveryPackage').val(pkg);
+                    var qstr = $('#form1').formSerialize();
+                    $.post('/projectManage/Ajax/AjaxSubmitProjectRelease.asp', qstr, function (data) {
+                        if (data != "success")
+                            alert(data);
+                    });
                 }
                 alert("提交成功");
                 parent.document.location.reload();
@@ -377,7 +396,7 @@
             if (vers === null)
                 vers = /(\d+)\.(\d+)\.(\d+)/g.exec(val);
             if (vers) {
-                vstr = [vers[1], vers[2], vers[3], vers[4]].join('.')
+                vstr = [vers[1], vers[2], vers[3], vers[4]].join('.');
                 $("input[name='txtVersion']").val(vstr);
             }
         }).css({
@@ -421,8 +440,7 @@
                 if (val === '' || selected.every(checkID)) {
                     console.log('Selected: ' + selected);
                     $(':checkbox', table).attr('checked', false);
-                    for (var i in selected) {
-                        var id = selected[i];
+                    selected.forEach(function (id) {
                         if (!idmgr.contains(id)) {
                             idmgr.check(id, function (id, name) {
                                 if (name) {
@@ -431,7 +449,7 @@
                             });
                         }
                         $('#proj_' + id + ' :checkbox', table).attr('checked', true);
-                    }
+                    });
                     // move checked IDs to the front
                     $('tbody input:checked', table).parent().parent().detach().prependTo($('tbody', table));
                 }
@@ -445,13 +463,13 @@
                     keys.sort();
                     for (var i in keys) {
                         var id = keys[i];
-                        var val = data[id];
                         if (checkID(id)) {
+                            var val = data[id];
                             $('<tr id=proj_' + id + '>' +
-                            '<td><input type="checkbox"></td>' +
-                            '<td>' + id + '</td>' +
-                            '<td class="projIdName">' + val['name'] + '</td>' +
-                            '<td><input id="delID" type="button" value="Del"/></td></tr>').appendTo($(this));
+                              '<td><input type="checkbox"></td>' +
+                              '<td>' + id + '</td>' +
+                              '<td class="projIdName">' + val.name + '</td>' +
+                              '<td><input id="delID" type="button" value="Del"/></td></tr>').appendTo($(this));
                         }
                     }
                     $("input[name='txtReleaseReleatedProject']").keyup();
@@ -492,8 +510,8 @@
             }).find('input#selectAllIDs').click(function () {
                 table.find(':checkbox').attr('checked', this.checked);
             });
-            var addButton = $('input#addID', table);
             table.find('tfoot').delegate('input#inputID', 'keyup', function (e) {
+                var addButton = $('input#addID', table);
                 if (e.which == 13 && !addButton.attr('disabled')) {
                     addButton.click();
                     return;
