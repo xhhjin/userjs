@@ -1,15 +1,18 @@
 ﻿// ==UserScript==
 // @name        ArcSoft Project Management
-// @version     10
+// @version     11
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>, xhhjin
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft project management system in http://doc-server
 // @include     http://doc-server/*
 // @include     https://doc-server/*
-// @updateURL   https://github.com/xhhjin/userjs/raw/master/docserver/doc-server-project-ms.user.js
-// @downloadURL https://github.com/xhhjin/userjs/raw/master/docserver/doc-server-project-ms.user.js
+// @updateURL   https://raw.githubusercontent.com/maxint/userjs/master/docserver/doc-server-project-ms.user.js
+// @downloadURL https://raw.githubusercontent.com/maxint/userjs/master/docserver/doc-server-project-ms.user.js
 // @grant       none
 // @Note
+// v11
+//  - Stay in step with Maxint.
+//
 // v10
 //  - Fix bug of using "for in" loop for Array.
 //  - Filter empty package path.
@@ -84,37 +87,33 @@
 // ==/UserScript==
 
 // a function that loads jQuery and calls a callback function when jQuery has finished loading
-; (function (callback, safe) {
-    if (typeof(jQuery) == "undefined") {
+; (function (callback) {
+    var callback2 = function (jQuery_old, jQuery) {
+        //Firefox supports
+        console.log('Using jquery ' + jQuery().jquery);
+        console.log('Runing custom script');
+        callback(jQuery_old, jQuery, typeof(unsafeWindow) == "undefined" ? window : unsafeWindow);
+    };
+    if (typeof(jQuery) == "undefined" || jQuery.jquery != '2.1.1') {
         var script = document.createElement("script");
         script.type = "text/javascript";
-        script.src = "https://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.11.1.min.js";
-        if (safe) {
-            var cb = document.createElement("script");
-            cb.type = "text/javascript";
-            cb.textContent = "jQuery.noConflict();(" + callback.toString() + ")(jQuery, window);";
-            script.addEventListener('load', function () {
-                document.head.appendChild(cb);
-            });
-        } else {
-            var dollar = undefined;
-            if (typeof($) != "undefined") dollar = $;
-            script.addEventListener('load', function () {
-                jQuery.noConflict();
-                $ = dollar;
-                callback(jQuery, window);
-            });
-        }
+        script.src = "//apps.bdimg.com/libs/jquery/2.1.1/jquery.min.js";
+        var dollar;
+        if (typeof($) != "undefined") dollar = $;
+        script.addEventListener('load', function () {
+            var jq = jQuery.noConflict();
+            $ = dollar;
+            callback2($, jq);
+        });
         document.head.appendChild(script);
     } else {
-        console.log('Using jquery ' + jQuery().jquery);
         setTimeout(function () {
-            //Firefox supports
-            console.log('Runing custom script');
-            callback(jQuery, typeof(unsafeWindow) == "undefined" ? window : unsafeWindow);
+            callback2(jQuery, jQuery);
         }, 30);
     }
-})(function ($, window) {
+})(function (jq, $, window) {
+    $("head").append('<link rel="stylesheet" href="//apps.bdimg.com/libs/jqueryui/1.10.4/css/jquery-ui.min.css">');
+    $.getScript("//apps.bdimg.com/libs/jqueryui/1.10.4/jquery-ui.min.js");
     // helper functions
     // local storage
     var IStorage = function (prefix) {
@@ -122,7 +121,10 @@
         var addpref = function (key) { return pref + key; };
         this.get = function (key, def) {
             var val = window.localStorage.getItem(addpref(key));
-            return val || def || null;
+            if (val !== null)
+                return val;
+            else
+                return def || null;
         };
         this.set = function (key, val) {
             window.localStorage.setItem(addpref(key), val);
@@ -148,7 +150,7 @@
 
     // replace main menu [Project]
     function redirectToProjectListPage(obj) {
-        obj.attr('href', '/projectManage/ProjectList.asp');
+        obj.prop('href', '/projectManage/ProjectList.asp');
     }
     redirectToProjectListPage($('li#mainMenuItem_150000 a'));
 
@@ -367,19 +369,19 @@
                 for (var i = 0; i < pkgs.length; ++i) {
                     var pkg = pkgs[i];
                     $('input#txtReleasePath,input#txtDeliveryPackage').val(pkg);
-                    if (!$('#form1').valid()) {
+                    if (!jq('#form1').valid()) {
                         alert('提交包列表格式不对');
                         return;
                     }
                 }
                 // disable the form to avoid user interaction when subcomt
-                $(this).attr('disabled', true);
+                $(this).prop('disabled', true);
                 // submit
                 for (var i = 0; i < pkgs.length; ++i) {
                     var pkg = pkgs[i];
                     console.log('submitting "' + pkg + '" ...');
                     $('input#txtReleasePath,input#txtDeliveryPackage').val(pkg);
-                    var qstr = $('#form1').formSerialize();
+                    var qstr = jq('#form1').formSerialize();
                     $.post('/projectManage/Ajax/AjaxSubmitProjectRelease.asp', qstr, function (data) {
                         if (data != "success")
                             alert(data);
@@ -390,17 +392,64 @@
             });
         }
         // update version
-        $('#txtDeliveryPackage,#txtDeliveryPackages').change(function () {
+        var default_version_fmt = '${major}.${minor}.${platform}.${build}';
+        var pkgInputs = $('#txtDeliveryPackage,#txtDeliveryPackages').change(function () {
             var val = $(this).val();
             var vers = /(\d+)\.(\d+)\.(\d+)\.(\d+)/g.exec(val);
-            if (vers === null)
+            if (vers === null) {
                 vers = /(\d+)\.(\d+)\.(\d+)/g.exec(val);
+                if (vers)
+                    vers.splice(3, '0');
+            }
             if (vers) {
-                vstr = [vers[1], vers[2], vers[3], vers[4]].join('.');
+                var vstr = istore.get('version.format', default_version_fmt) || '';
+                vstr = vstr.replace('${major}', vers[1]);
+                vstr = vstr.replace('${minor}', vers[2]);
+                vstr = vstr.replace('${platform}', vers[3]);
+                vstr = vstr.replace('${build}', vers[4]);
+                console.log(vstr);
                 $("input[name='txtVersion']").val(vstr);
             }
         }).css({
             'width': '100%',
+        }).change();
+        $('<input type="button" value="Version Format"/>').appendTo($("input[name='txtVersion']").parent()).click(function () {
+            if ($('#version-format-dialog').length === 0) {
+                var fmt = istore.get('version.format', default_version_fmt);
+                $('<div id="version-format-dialog" title="设置版本格式">' +
+                  '  <p class="validateTips">可用的变量：${major}, ${minor}, ${platform}, ${build}</p>' +
+                  '  <form>' +
+                  '  <fieldset>' +
+                  '    <label for="name">格式</label>' +
+                  '    <input type="text" name="format" id="format" class="text ui-widget-content ui-corner-all">' +
+                  '  </fieldset>' +
+                  '  </form>' +
+                  '</div>').appendTo(document.body).find('input#format').css({
+                    'width':  '300',
+                }).val(fmt);
+            }
+            $('#version-format-dialog').dialog({
+                autoOpen: true,
+                width: 400,
+                modal: true,
+                buttons: {
+                    '默认': function() {
+                        format.value = default_version_fmt;
+                        istore.set('version.format', default_version_fmt);
+                    },
+                    '确定': function() {
+                        if (format.value != fmt) {
+                            console.log('Set version format to: ' + format.value);
+                            istore.set('version.format', format.value);
+                            pkgInputs.change();
+                        }
+                        $(this).dialog('close');
+                    },
+                    '关闭': function() {
+                        $(this).dialog('close');
+                    }
+                }
+            });
         });
         // release package
         $('input#txtReleasePath').css({
@@ -439,8 +488,9 @@
                 var selected = val.split(',');
                 if (val === '' || selected.every(checkID)) {
                     console.log('Selected: ' + selected);
-                    $(':checkbox', table).attr('checked', false);
-                    selected.forEach(function (id) {
+                    $(':checkbox', table).prop('checked', false);
+                    for (var i=0; i < selected.length; ++i) {
+                        var id = selected[i]; 
                         if (!idmgr.contains(id)) {
                             idmgr.check(id, function (id, name) {
                                 if (name) {
@@ -448,8 +498,8 @@
                                 }
                             });
                         }
-                        $('#proj_' + id + ' :checkbox', table).attr('checked', true);
-                    });
+                        $('#proj_' + id + ' :checkbox', table).prop('checked', true);
+                    }
                     // move checked IDs to the front
                     $('tbody input:checked', table).parent().parent().detach().prependTo($('tbody', table));
                 }
@@ -478,7 +528,7 @@
             table.find('tbody').delegate('input#delID', 'click', function () {
                 var id = $(this).parent().prev().prev().text();
                 console.log('Delete: ' + id);
-                $('#proj_' + id + ' :checkbox', table).attr('checked', false).click();
+                $('#proj_' + id + ' :checkbox', table).prop('checked', false).click();
                 idmgr.remove(id);
             });
             table.delegate(':checkbox', 'click', function() {
@@ -508,17 +558,17 @@
                     width: '100%',
                 });
             }).find('input#selectAllIDs').click(function () {
-                table.find(':checkbox').attr('checked', this.checked);
+                table.find(':checkbox').prop('checked', this.checked);
             });
             table.find('tfoot').delegate('input#inputID', 'keyup', function (e) {
                 var addButton = $('input#addID', table);
-                if (e.which == 13 && !addButton.attr('disabled')) {
+                if (e.which == 13 && !addButton.prop('disabled')) {
                     addButton.click();
                     return;
                 }
                 idmgr.check(this.value, function (name) {
                     table.find('td#inputIDtxt').html(name || '<font color="#FF0000">[Invalid project id]</font>');
-                    addButton.attr('disabled', name === undefined);
+                    addButton.prop('disabled', name === undefined);
                 });
             }).delegate('input#addID', 'click', function () {
                 var id = table.find('input#inputID').val();
@@ -537,4 +587,4 @@
             height: '80px',
         });
     }
-}, true);
+});
