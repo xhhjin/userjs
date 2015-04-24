@@ -1,6 +1,6 @@
 ﻿// ==UserScript==
 // @name        ArcSoft Project Management
-// @version     11
+// @version     12
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>, xhhjin
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft project management system in http://doc-server
@@ -10,6 +10,9 @@
 // @downloadURL https://raw.githubusercontent.com/maxint/userjs/master/docserver/doc-server-project-ms.user.js
 // @grant       none
 // @Note
+// v12
+//  - Stay in step with Maxint to fix bugs.
+//
 // v11
 //  - Stay in step with Maxint.
 //
@@ -112,8 +115,6 @@
         }, 30);
     }
 })(function (jq, $, window) {
-    $("head").append('<link rel="stylesheet" href="//apps.bdimg.com/libs/jqueryui/1.10.4/css/jquery-ui.min.css">');
-    $.getScript("//apps.bdimg.com/libs/jqueryui/1.10.4/jquery-ui.min.js");
     // helper functions
     // local storage
     var IStorage = function (prefix) {
@@ -428,28 +429,36 @@
                     'width':  '300',
                 }).val(fmt);
             }
-            $('#version-format-dialog').dialog({
-                autoOpen: true,
-                width: 400,
-                modal: true,
-                buttons: {
-                    '默认': function() {
-                        format.value = default_version_fmt;
-                        istore.set('version.format', default_version_fmt);
-                    },
-                    '确定': function() {
-                        if (format.value != fmt) {
-                            console.log('Set version format to: ' + format.value);
-                            istore.set('version.format', format.value);
-                            pkgInputs.change();
+            var showDialog = function() {
+                $('#version-format-dialog').dialog({
+                    autoOpen: true,
+                    width: 400,
+                    modal: true,
+                    buttons: {
+                        '默认': function() {
+                            format.value = default_version_fmt;
+                            istore.set('version.format', default_version_fmt);
+                        },
+                        '确定': function() {
+                            if (format.value != fmt) {
+                                console.log('Set version format to: ' + format.value);
+                                istore.set('version.format', format.value);
+                                pkgInputs.change();
+                            }
+                            $(this).dialog('close');
+                        },
+                        '关闭': function() {
+                            $(this).dialog('close');
                         }
-                        $(this).dialog('close');
-                    },
-                    '关闭': function() {
-                        $(this).dialog('close');
                     }
-                }
-            });
+                });
+            };
+            if ($.ui) {
+                showDialog();
+            } else {
+                $("head").append('<link rel="stylesheet" href="//apps.bdimg.com/libs/jqueryui/1.10.4/css/jquery-ui.min.css">');
+                $.getScript("//apps.bdimg.com/libs/jqueryui/1.10.4/jquery-ui.min.js", showDialog);
+            }
         });
         // release package
         $('input#txtReleasePath').css({
@@ -479,11 +488,11 @@
                 table.find('input#selectAllIDs').each(function () {
                     this.indeterminate = checked != total && checked !== 0;
                     if (!this.indeterminate)
-                        this.checked = (checked == total);
+                        this.checked = checked == total && total !== 0;
                 });
             };
             // detete id input box
-            $("input[name='txtReleaseReleatedProject']").keyup(function () {
+            var projectIdInput = $("input[name='txtReleaseReleatedProject']").keyup(function () {
                 var val = this.value.trim();
                 var selected = val.split(',');
                 if (val === '' || selected.every(checkID)) {
@@ -522,13 +531,17 @@
                               '<td><input id="delID" type="button" value="Del"/></td></tr>').appendTo($(this));
                         }
                     }
-                    $("input[name='txtReleaseReleatedProject']").keyup();
+                    projectIdInput.keyup();
                 });
             }).load();
             table.find('tbody').delegate('input#delID', 'click', function () {
                 var id = $(this).parent().prev().prev().text();
                 console.log('Delete: ' + id);
-                $('#proj_' + id + ' :checkbox', table).prop('checked', false).click();
+                // remove id from selected input
+                var selected = projectIdInput.val();
+                selected = selected.replace(id + ',', '')
+                selected = selected.replace(id, '')
+                projectIdInput.val(selected)
                 idmgr.remove(id);
             });
             table.delegate(':checkbox', 'click', function() {
@@ -536,7 +549,7 @@
                 table.find('tbody input:checked').parent().next().each(function() {
                     ids.push($(this).text());
                 });
-                $("input[name='txtReleaseReleatedProject']").val(ids.join(','));
+                projectIdInput.val(ids.join(','));
                 updateCheckBoxes();
             }).delegate('td.projIdName', 'click', function () {
                 if ($(this).find('input').length) return;
