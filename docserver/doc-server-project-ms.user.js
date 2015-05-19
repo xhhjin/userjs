@@ -97,10 +97,10 @@
         console.log('Runing custom script');
         callback(jQuery_old, jQuery, typeof(unsafeWindow) == "undefined" ? window : unsafeWindow);
     };
-    if (typeof(jQuery) == "undefined" || jQuery.jquery != '2.1.1') {
+    if (typeof(jQuery) == "undefined" || jQuery.jquery != '1.7.2') {
         var script = document.createElement("script");
         script.type = "text/javascript";
-        script.src = "//apps.bdimg.com/libs/jquery/2.1.1/jquery.min.js";
+        script.src = "//lib.sinaapp.com/js/jquery/1.7.2/jquery.min.js";
         var dollar;
         if (typeof($) != "undefined") dollar = $;
         script.addEventListener('load', function () {
