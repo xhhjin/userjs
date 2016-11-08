@@ -5,9 +5,11 @@
 // @description	This scripts adds a button to edit the HTML code of a note in Evernote Web
 // @match		http://www.evernote.com/Home.action*
 // @match		https://www.evernote.com/Home.action*
+// @match		http://app.yinxiang.com/Home.action*
+// @match		https://app.yinxiang.com/Home.action*
 // @copyright	2015, Seb Maynard, Andrea Lazzarotto
 // @license		Apache License, Version 2.0
-// @require		http://code.jquery.com/jquery-latest.min.js
+// @require		https://cdn.bootcss.com/jquery/1.11.1/jquery.min.js
 // @grant       GM_setValue
 // @grant       GM_getValue
 // ==/UserScript==
@@ -279,8 +281,8 @@ var placeButton = function() {
 };
 
 $(document).ready(function() {
-	$.getScript("https://cdn.rawgit.com/ajaxorg/ace-builds/v1.2.5/src-min-noconflict/ace.js").done(function(){
-		$.getScript("https://cdn.rawgit.com/ajaxorg/ace-builds/v1.2.5/src-min-noconflict/ext-language_tools.js").done(function(){
+	$.getScript("https://cdn.bootcss.com/ace/1.2.5/ace.js").done(function(){
+		$.getScript("https://cdn.bootcss.com/ace/1.2.5/ext-language_tools.js").done(function(){
 			// Place the button at the end of the formatting options
 			setTimeout(function() {
 				if(!placeButton())
@@ -291,6 +293,6 @@ $(document).ready(function() {
 
 	$('<link/>', {
 	   rel: 'stylesheet',
-	   href: 'https://fonts.googleapis.com/icon?family=Material+Icons'
+	   href: 'https://fonts.css.network/icon?family=Material+Icons'
 	}).appendTo('head');
 });
