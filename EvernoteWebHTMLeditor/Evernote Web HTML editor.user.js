@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		Evernote Web HTML editor
 // @namespace	http://andrealazzarotto.com/
-// @version		3.0
+// @version		3.0.1
 // @description	This scripts adds a button to edit the HTML code of a note in Evernote Web
 // @match		http://www.evernote.com/Home.action*
 // @match		https://www.evernote.com/Home.action*
