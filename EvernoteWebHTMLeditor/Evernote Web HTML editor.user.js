@@ -9,9 +9,6 @@
 // @match		https://app.yinxiang.com/Home.action*
 // @copyright	2015, Seb Maynard, Andrea Lazzarotto
 // @license		Apache License, Version 2.0
-// @require		https://cdn.bootcss.com/jquery/1.11.1/jquery.min.js
-// @grant       GM_setValue
-// @grant       GM_getValue
 // ==/UserScript==
 
 /*
@@ -38,6 +35,53 @@
 	See the License for the specific language governing permissions and
 	limitations under the License.
 */
+
+//---------------------------------------------
+// Frequent used functions
+//---------------------------------------------
+
+var getScript = function(url, funcToRun) {
+	let script = document.createElement("script");
+	script.type = "text/javascript";
+	script.src = url;
+	script.addEventListener('load', funcToRun, false);
+	(document.head || document.body || document.documentElement).appendChild(script);
+};
+
+// a function that loads jQuery and calls a callback function when jQuery has loaded
+var jQueryCall = function (callback) {
+	"use strict";
+	let callOnReady = function (jq) {
+		setTimeout(function () {
+			callback(jq, window);
+		}, 2000);
+	};
+	if (typeof(jQuery) === "undefined" || jQuery.jquery < '2.2') {
+		getScript("//cdn.bootcss.com/jquery/2.2.4/jquery.min.js", function() {
+			callOnReady(jQuery.noConflict());
+		});
+	} else {
+		callOnReady(jQuery);
+	}
+};
+
+var GM_getValue = function(key, def) {
+	let val = window.localStorage.getItem(key);
+	if (val !== null) {
+		return val;
+	} else {
+		return def || null;
+	}
+};
+
+var GM_setValue = function(key, val) {
+	window.localStorage.setItem(key, val);
+};
+
+
+//---------------------------------------------
+// Main
+//---------------------------------------------
 
 var icon_old = "iVBORw0KGgoAAAANSUhEUgAAABIAAAASCAMAAABhEH5lAAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAK7OHOkAAAAzUExURUxpcYiIiIiIiExpcYiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiNINviEAAAAQdFJOUwCqZgDdzBEiuzNVRJl3/4jEJrZZAAAAhUlEQVQY05WPwQ7DIAxDDQokAdr5/7+2gVbrusOkWbnwYmwAfiizfqNkj2NVYM/1tvnYN3Rq4/AFWiHNMQSayJIDGUtcg7xmgFHeLmW/XWfWtseSqX80WgL08bDKjD8VP5PoZKKj0DmRQtRt1oEXEqF2QzbGnMirLJQK+4Uiy5erMVIo5QACmwWhG+ikMQAAAABJRU5ErkJggg==";
 var icon_new = "iVBORw0KGgoAAAANSUhEUgAAABEAAAARCAMAAAAMs7fIAAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAK7OHOkAAAAnUExURUxpcQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK/XnHYAAAAMdFJOUwBEuzPMd2aZIt2I7sVV9wMAAABUSURBVBjTpY7bCsAgDEOjzOvy/9+7por6NBg7SmhCWwr8orbThQjkgissrzKGWRhM0luSuHs0uHp8T8k+eNDqp8uoT6OjU24kCpO9kRieYCveE/IBzfcCeIwe7AAAAAAASUVORK5CYII=";
@@ -117,8 +161,8 @@ var toolbarTheme = function() {
 };
 var prepareTextArea = function() {
 	wrapper = $(
-        "<div id='html_code_editor'>" +
-            "<div id='html_code_toolbar'>" +
+		"<div id='html_code_editor'>" +
+			"<div id='html_code_toolbar'>" +
 				"<div id='left_side' style='float: left'>" +
 					"<select id='html_theme'>" +
 						"<optgroup label='Bright'>" +
@@ -167,13 +211,12 @@ var prepareTextArea = function() {
 					"</span>" +
 				"</div>" +
 				"<div id='right_side' style='float: right'>" +
-					"<a target='_blank' style='margin-right: 2em' href='https://lazza.me/EvernotePremium20USD'>Get Premium for €20/$22 a year</a>" +
 					"<input id='btn_reset' type='reset'/>" +
 					"<input id='btn_submit' type='submit'/>" +
 				"</div>" +
-            "</div>" +
-        "    <div id='html_code_area' />" +
-        "</div>");
+			"</div>" +
+		"    <div id='html_code_area' />" +
+		"</div>");
 	wrapper.css({
 		"z-index": "10000",
 		"position": "fixed",
@@ -184,13 +227,13 @@ var prepareTextArea = function() {
 	});
 	$("body").append(wrapper);
 
-    $("#html_code_toolbar").css({
-        'height': '3rem',
-        'line-height': '3rem',
-        'box-sizing': 'border-box',
-        'border-bottom': '1px solid #404040',
+	$("#html_code_toolbar").css({
+		'height': '3rem',
+		'line-height': '3rem',
+		'box-sizing': 'border-box',
+		'border-bottom': '1px solid #404040',
 		'background': '#080808'
-    });
+	});
 	$("#html_code_area").css({
 		"width": "100%",
 		"height": "calc(100% - 3rem)",
@@ -227,16 +270,12 @@ var prepareTextArea = function() {
 	toolbarTheme();
 
 	editor = ace.edit("html_code_area");
-    editor.setTheme(theme);
-    editor.getSession().setMode("ace/mode/html");
+	editor.setTheme(theme);
+	editor.getSession().setMode("ace/mode/html");
 	editor.setOptions({
 		fontSize: size + "px",
 		wrap: "free",
-		enableBasicAutocompletion: true,
 		scrollPastEnd: true,
-		showPrintMargin: false,
-		enableSnippets: true,
-		enableLiveAutocompletion: true
 	});
 
 	$("#btn_submit").click(function() {
@@ -250,49 +289,37 @@ var prepareTextArea = function() {
 	wrapper.hide();
 };
 
-var placeButton = function() {
-	// old Evernote Web
-	var prev = $("table:has(input)").first().find("td:nth-of-type(9)");
-	var code = "<td id='html_edit'></td>";
-	var icon = icon_old;
-	// new Evernote Web
-	if(!prev.length) {
-		prev = $("#gwt-debug-FormattingBar-strikeButton").parent();
-		code = "<div id='html_edit'></div>";
-		icon = icon_new;
+jQueryCall(function ($, window) {
+	"use strict";
+	console.log('[I] Using jquery ' + $().jquery);
+
+	let prev_btn = $('div#gwt-debug-NoteAttributes-trashButton');
+	//console.log($('div'));
+	//console.log(prev_btn);
+	if (prev_btn.length === 0) {
+		return;
 	}
-	if(!prev.length)
-		return false;
 
-	prepareTextArea();
-	prev.after(code);
-	var btn = $("#html_edit");
-	btn.addClass(prev.attr('class'));
-	btn.attr("style", prev.attr("style"));
-	prev.find("div").first().clone().appendTo(btn);
-	btn.find("input").remove();
-	btn.find("div").attr("title", "HTML");
-	btn.find("div").css("background-image", "url('data:image/png;base64,"+icon+"')");
-	btn.click(function() {
-		editor.setValue(getCurrentContent(), -1);
-		wrapper.show();
-	});
-	return true;
-};
-
-$(document).ready(function() {
-	$.getScript("https://cdn.bootcss.com/ace/1.2.5/ace.js").done(function(){
-		$.getScript("https://cdn.bootcss.com/ace/1.2.5/ext-language_tools.js").done(function(){
+	getScript("//cdn.bootcss.com/ace/1.2.5/ace.js", function () {
+		getScript("//cdn.bootcss.com/ace/1.2.5/worker-html.js", function () {
+			console.log('[I] Runing custom script');
 			// Place the button at the end of the formatting options
-			setTimeout(function() {
-				if(!placeButton())
-					setTimeout(arguments.callee, 400);
-			}, 400);
+			let prev_btn = $('div#gwt-debug-NoteAttributes-trashButton');
+			let btn = prev_btn.clone();
+			btn.attr('id', 'gwt-debug-NoteAttributes-htmlButton');
+			btn.attr("title", "HTML");
+			btn.css("background-image", "url('data:image/png;base64,"+icon_old+"')");
+			prev_btn.after(btn);
+			prepareTextArea();
+			btn.click(function() {
+				editor.setValue(getCurrentContent(), -1);
+				wrapper.show();
+			});
 		});
 	});
 
 	$('<link/>', {
-	   rel: 'stylesheet',
-	   href: 'https://fonts.css.network/icon?family=Material+Icons'
+		rel: 'stylesheet',
+		href: '//cdn.bootcss.com/material-design-icons/3.0.1/iconfont/material-icons.min.css'
 	}).appendTo('head');
 });
