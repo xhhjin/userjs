@@ -3,10 +3,10 @@
 // @namespace	http://andrealazzarotto.com/
 // @version		3.0.1
 // @description	This scripts adds a button to edit the HTML code of a note in Evernote Web
-// @match		http://www.evernote.com/Home.action*
-// @match		https://www.evernote.com/Home.action*
-// @match		http://app.yinxiang.com/Home.action*
-// @match		https://app.yinxiang.com/Home.action*
+// @match		http://www.evernote.com/Home.action#n=*
+// @match		https://www.evernote.com/Home.action#n=*
+// @match		http://app.yinxiang.com/Home.action#n=*
+// @match		https://app.yinxiang.com/Home.action#n=*
 // @copyright	2015, Seb Maynard, Andrea Lazzarotto
 // @license		Apache License, Version 2.0
 // ==/UserScript==
