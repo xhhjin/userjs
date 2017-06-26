@@ -9,6 +9,9 @@
 // @match		https://app.yinxiang.com/Home.action*
 // @copyright	2015, Seb Maynard, Andrea Lazzarotto
 // @license		Apache License, Version 2.0
+// @require		http://code.jquery.com/jquery-latest.min.js
+// @grant       GM_setValue
+// @grant       GM_getValue
 // ==/UserScript==
 
 /*
@@ -278,8 +281,8 @@ var placeButton = function() {
 };
 
 $(document).ready(function() {
-	$.getScript("https://cdn.rawgit.com/ajaxorg/ace-builds/v1.2.5/src-min-noconflict/ace.js").done(function(){
-		$.getScript("https://cdn.rawgit.com/ajaxorg/ace-builds/v1.2.5/src-min-noconflict/ext-language_tools.js").done(function(){
+	$.getScript("//cdn.bootcss.com/ace/1.2.5/ace.js").done(function(){
+		$.getScript("//cdn.bootcss.com/ace/1.2.5/worker-html.js").done(function(){
 			// Place the button at the end of the formatting options
 			setTimeout(function() {
 				if(!placeButton())
@@ -290,6 +293,6 @@ $(document).ready(function() {
 
 	$('<link/>', {
 	   rel: 'stylesheet',
-	   href: 'https://fonts.googleapis.com/icon?family=Material+Icons'
+	   href: '//cdn.bootcss.com/material-design-icons/3.0.1/iconfont/material-icons.min.css'
 	}).appendTo('head');
 });
