@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name		Evernote Web HTML editor
 // @namespace	http://andrealazzarotto.com/
-// @version		3.0.1
+// @version		3.2.2
 // @description	This scripts adds a button to edit the HTML code of a note in Evernote Web
-// @match		http://www.evernote.com/Home.action#n=*
-// @match		https://www.evernote.com/Home.action#n=*
-// @match		http://app.yinxiang.com/Home.action#n=*
-// @match		https://app.yinxiang.com/Home.action#n=*
+// @match		http://www.evernote.com/Home.action*
+// @match		https://www.evernote.com/Home.action*
+// @match		http://app.yinxiang.com/Home.action*
+// @match		https://app.yinxiang.com/Home.action*
 // @copyright	2015, Seb Maynard, Andrea Lazzarotto
 // @license		Apache License, Version 2.0
 // ==/UserScript==
@@ -36,53 +36,6 @@
 	limitations under the License.
 */
 
-//---------------------------------------------
-// Frequent used functions
-//---------------------------------------------
-
-var getScript = function(url, funcToRun) {
-	let script = document.createElement("script");
-	script.type = "text/javascript";
-	script.src = url;
-	script.addEventListener('load', funcToRun, false);
-	(document.head || document.body || document.documentElement).appendChild(script);
-};
-
-// a function that loads jQuery and calls a callback function when jQuery has loaded
-var jQueryCall = function (callback) {
-	"use strict";
-	let callOnReady = function (jq) {
-		setTimeout(function () {
-			callback(jq, window);
-		}, 2000);
-	};
-	if (typeof(jQuery) === "undefined" || jQuery.jquery < '2.2') {
-		getScript("//cdn.bootcss.com/jquery/2.2.4/jquery.min.js", function() {
-			callOnReady(jQuery.noConflict());
-		});
-	} else {
-		callOnReady(jQuery);
-	}
-};
-
-var GM_getValue = function(key, def) {
-	let val = window.localStorage.getItem(key);
-	if (val !== null) {
-		return val;
-	} else {
-		return def || null;
-	}
-};
-
-var GM_setValue = function(key, val) {
-	window.localStorage.setItem(key, val);
-};
-
-
-//---------------------------------------------
-// Main
-//---------------------------------------------
-
 var icon_old = "iVBORw0KGgoAAAANSUhEUgAAABIAAAASCAMAAABhEH5lAAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAK7OHOkAAAAzUExURUxpcYiIiIiIiExpcYiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiNINviEAAAAQdFJOUwCqZgDdzBEiuzNVRJl3/4jEJrZZAAAAhUlEQVQY05WPwQ7DIAxDDQokAdr5/7+2gVbrusOkWbnwYmwAfiizfqNkj2NVYM/1tvnYN3Rq4/AFWiHNMQSayJIDGUtcg7xmgFHeLmW/XWfWtseSqX80WgL08bDKjD8VP5PoZKKj0DmRQtRt1oEXEqF2QzbGnMirLJQK+4Uiy5erMVIo5QACmwWhG+ikMQAAAABJRU5ErkJggg==";
 var icon_new = "iVBORw0KGgoAAAANSUhEUgAAABEAAAARCAMAAAAMs7fIAAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAK7OHOkAAAAnUExURUxpcQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK/XnHYAAAAMdFJOUwBEuzPMd2aZIt2I7sVV9wMAAABUSURBVBjTpY7bCsAgDEOjzOvy/9+7por6NBg7SmhCWwr8orbThQjkgissrzKGWRhM0luSuHs0uHp8T8k+eNDqp8uoT6OjU24kCpO9kRieYCveE/IBzfcCeIwe7AAAAAAASUVORK5CYII=";
 
@@ -100,15 +53,15 @@ var basic_html_formatter = function(code) {
 };
 
 var getCurrentContent = function() {
-	var content = $("#tinymce, #en-note", $("iframe").contents()).first().clone();
+	var content = $("#tinymce, #en-note", $("#en-common-editor-iframe, .RichTextArea-entinymce").contents()).first().clone();
 	content.find("*").removeAttr("data-mce-style").removeAttr("data-mce-src").removeAttr("data-mce-href");
 	return basic_html_formatter(content.html());
 };
 var setCurrentContent = function(content) {
 	if(!$("table:has(input)").first().is(":visible")) // Activate the note editing mode again
 		$("iframe.gwt-Frame").first().contents().find("body").click();
-	$("#tinymce, #en-note", $("iframe").contents()).first().html(content);
-	$(".ennote", $("iframe").contents()).first().html(content);
+	$("#tinymce, #en-note", $("#en-common-editor-iframe, .RichTextArea-entinymce").contents()).first().html(content);
+	$(".ennote", $("#en-common-editor-iframe, .RichTextArea-entinymce").contents()).first().html(content);
 };
 var toolbarTheme = function() {
 	var style = {
@@ -137,7 +90,7 @@ var toolbarTheme = function() {
 	});
 	toolbar.find("#btn_reset").css({
 		'border-left': '1px solid ' + colors.border,
-		'background': colors.background
+		'background': "transparent"
 	});
 	toolbar.find('*:not(.material-icons)').css({
 		'color': colors.text,
@@ -211,6 +164,7 @@ var prepareTextArea = function() {
 					"</span>" +
 				"</div>" +
 				"<div id='right_side' style='float: right'>" +
+					"<a target='_blank' style='margin-right: 2em' href='https://lazza.me/EvernotePremium20USD'>Get Premium for €20/$22 a year</a>" +
 					"<input id='btn_reset' type='reset'/>" +
 					"<input id='btn_submit' type='submit'/>" +
 				"</div>" +
@@ -251,12 +205,12 @@ var prepareTextArea = function() {
 	$("#html_size").change(function() {
 		size = $("#html_size").val();
 		GM_setValue("editor_size", size);
-		editor.setOptions({fontSize: size + "px"});
+		editor.setOptions(cloneInto({fontSize: size + "px"}, unsafeWindow));
 	});
 	$("#right_side input").css({
 		"border": 0,
-		"height": "calc(3rem - 1px)",
-		"margin-bottom": '1px',
+		"background": "transparent",
+		"height": "3rem",
 		"min-width": "8rem",
 		"display": "inline-block",
 	});
@@ -269,14 +223,18 @@ var prepareTextArea = function() {
 	$("#btn_replace").click(function() { editor.execCommand("replace"); });
 	toolbarTheme();
 
-	editor = ace.edit("html_code_area");
-	editor.setTheme(theme);
-	editor.getSession().setMode("ace/mode/html");
-	editor.setOptions({
+	editor = unsafeWindow.ace.edit("html_code_area");
+  editor.setTheme(theme);
+  editor.getSession().setMode("ace/mode/html");
+	editor.setOptions(cloneInto({
 		fontSize: size + "px",
 		wrap: "free",
+		enableBasicAutocompletion: true,
 		scrollPastEnd: true,
-	});
+		showPrintMargin: false,
+		enableSnippets: true,
+		enableLiveAutocompletion: true
+	}, unsafeWindow));
 
 	$("#btn_submit").click(function() {
 		setCurrentContent(editor.getValue());
@@ -289,37 +247,49 @@ var prepareTextArea = function() {
 	wrapper.hide();
 };
 
-jQueryCall(function ($, window) {
-	"use strict";
-	console.log('[I] Using jquery ' + $().jquery);
-
-	let prev_btn = $('div#gwt-debug-NoteAttributes-trashButton');
-	//console.log($('div'));
-	//console.log(prev_btn);
-	if (prev_btn.length === 0) {
-		return;
+var placeButton = function() {
+	// old Evernote Web
+	var prev = $("table:has(input)").first().find("td:nth-of-type(9)");
+	var code = "<td id='html_edit'></td>";
+	var icon = icon_old;
+	// new Evernote Web
+	if(!prev.length) {
+		prev = $("#gwt-debug-FormattingBar-strikeButton").parent();
+		code = "<div id='html_edit'></div>";
+		icon = icon_new;
 	}
+	if(!prev.length)
+		return false;
 
-	getScript("//cdn.bootcss.com/ace/1.2.5/ace.js", function () {
-		getScript("//cdn.bootcss.com/ace/1.2.5/worker-html.js", function () {
-			console.log('[I] Runing custom script');
+	prepareTextArea();
+	prev.after(code);
+	var btn = $("#html_edit");
+	btn.addClass(prev.attr('class'));
+	btn.attr("style", prev.attr("style"));
+	prev.find("div").first().clone().appendTo(btn);
+	btn.find("input").remove();
+	btn.find("div").attr("title", "HTML");
+	btn.find("div").css("background-image", "url('data:image/png;base64,"+icon+"')");
+	btn.click(function() {
+		editor.setValue(getCurrentContent(), -1);
+		wrapper.show();
+	});
+	return true;
+};
+
+$(document).ready(function() {
+	$.getScript("https://cdn.rawgit.com/ajaxorg/ace-builds/v1.2.5/src-min-noconflict/ace.js").done(function(){
+		$.getScript("https://cdn.rawgit.com/ajaxorg/ace-builds/v1.2.5/src-min-noconflict/ext-language_tools.js").done(function(){
 			// Place the button at the end of the formatting options
-			let prev_btn = $('div#gwt-debug-NoteAttributes-trashButton');
-			let btn = prev_btn.clone();
-			btn.attr('id', 'gwt-debug-NoteAttributes-htmlButton');
-			btn.attr("title", "HTML");
-			btn.css("background-image", "url('data:image/png;base64,"+icon_old+"')");
-			prev_btn.after(btn);
-			prepareTextArea();
-			btn.click(function() {
-				editor.setValue(getCurrentContent(), -1);
-				wrapper.show();
-			});
+			setTimeout(function() {
+				if(!placeButton())
+					setTimeout(arguments.callee, 400);
+			}, 400);
 		});
 	});
 
 	$('<link/>', {
-		rel: 'stylesheet',
-		href: '//cdn.bootcss.com/material-design-icons/3.0.1/iconfont/material-icons.min.css'
+	   rel: 'stylesheet',
+	   href: 'https://fonts.googleapis.com/icon?family=Material+Icons'
 	}).appendTo('head');
 });
